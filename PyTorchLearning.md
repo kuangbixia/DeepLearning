@@ -521,7 +521,7 @@ $$
     
     - 最常用的池化层：池化窗口为2 x 2，步幅为2——每隔2个元素从图像中划分出2 x 2的区块，对每个区块中的4个元素取最大值
     
-    ![](C:\工作\DeepLearning\max_pooling.JPG)
+    ![https://github.com/kuangbixia/DeepLearning/blob/master/max_pooling.JPG](E:\DeepLearning\max_pooling.JPG)
   - 平均池化
 - 完全连接层
 - 损失函数层
