@@ -103,7 +103,7 @@ q = x.transpose(0,1) # 交换第一维和第二维
 torch.Size([3,5])
 '''
 
-# 查看张量的大小——Tensor.item()
+# 查看张量的大小/值——Tensor.item()
 x = torch.randn(1)
 print(x.item())
 ```
@@ -199,6 +199,30 @@ if torch.cuda.is_available():
     tensor([-0.4743], dtype=torch.float64)
     '''
 ```
+
+## 4 Pytorch相关操作
+
+### (1) Tensor.size()
+
+​	获取Tensor的形状
+
+- 无参数：返回整个Tensor的形状
+
+- 有参数（int）：返回Tensor的某个维度的size，示例：
+
+  ```python
+  import torch
+  
+  x = torch.rand(5,3)
+  y = x.size(0)
+  '''
+  y: 5
+  '''
+  ```
+
+### (2) Tensor == Tensor
+
+​	返回包含每个位置的元素取等运算后的bool值的Tensor
 
 # 自动微分——autograd
 
@@ -348,6 +372,137 @@ False
 '''
 ```
 
+# 模型
+
+## 1 线性回归
+
+### (1) 模型预测
+
+$$
+\begin{align}
+\hat{y}&=w_1x_1+w_2x_2+···+w_nx_n+b\\
+&=W^T·X
+\end{align}
+$$
+
+$$
+其中，W^T=\begin{bmatrix}
+w_1&w_2&\cdots&w_n&b
+\end{bmatrix}
+,
+X=\begin{bmatrix}
+x_1\\
+x_2\\
+\vdots\\
+x_n\\
+1
+\end{bmatrix}
+$$
+
+
+
+### (2) MSE损失函数——凸函数
+
+$$
+MSE(W)=\frac{1}{m}\sum^m_{i=1}(W^T·X^{(i)}-y^{(i)})^2
+$$
+
+
+
+## 2 逻辑回归——二分类
+
+### (1) 逻辑函数——sigmoid函数（S型）
+
+$$
+σ(t)=\frac{1}{1+e^{-t}}=\frac{e^t}{1+e^t}
+$$
+
+### (2) 概率估算
+
+$$
+\hat{p}=σ(W^T·X)
+$$
+
+### (3) 模型预测
+
+$$
+\hat{y}=
+\begin{cases}
+0&(\hat{p}<0.5)\cr
+1&(\hat{p}>=0.5)
+\end{cases}
+$$
+
+### (4) log损失函数
+
+$$
+\begin{align}
+&单个实例：j(W)=\begin{cases}
+-log(\hat{p})&(y=1)\cr
+-log(1-\hat{p})&(y=0)
+\end{cases}\\\\
+&整个训练集：J(W)=-\frac{1}{m}\sum^m_{i=1}[y^{(i)}log(\hat{p}^{(i)})+(1-y^{(i)})log(1-\hat{p}^{(i)})]\\\\
+&其中，第i个实例的\hat{y}=1时，y^{(i)}=1；\hat{y}=0时，y^{(i)}=0
+\end{align}
+$$
+
+## 3 softmax回归——多类别
+
+​	对每个实例x，先计算出每个类别k的分数，然后对K个分数应用softmax函数（归一化指数），估算出每个类别的概率。
+
+### (1) 计算类别k的分数
+
+​	每个类别都有自己特定的参数W_k
+$$
+s_k(X)=W_k^T·X
+$$
+
+### (2) 估算概率
+
+- 通过softmax函数计算每个分数的指数
+- 对指数进行归一化处理（除以所有指数的总和）
+- 得到概率：在给定类别k的分数下，实例X属于类别k的概率
+
+$$
+\hat{p_k}=σ(s(X))_k=\frac{e^{s_k(X)}}{\sum^K_{j=1}e^{s_j(X)}}
+$$
+
+### (3) 模型预测
+
+$$
+\hat{y}=argmax_k\ \hat{p}=argmax_k\ s_k(X)=argmax_k\ (W^T_k·X)
+$$
+
+- argmax函数：返回使得函数最大化所对应的变量的值
+- 这里，返回的是，使得估算概率最大的类别k的值
+
+### (4) CrossEntropy交叉熵损失函数
+
+$$
+\begin{align}
+&J(W)=-\frac{1}{m}\sum^m_{i=1}\sum^K_{j=1}y_k^{(i)}log(\hat{p}_k^{(i)})\\\\
+&其中，当第i个实例的预测类别是k时，y_k^{(i)}=1，否则为0\\
+&当只有两个类别时，K=2，这个损失函数等价于逻辑回归的log损失函数
+\end{align}
+$$
+
+# 优化算法
+
+## 1 梯度下降
+
+- 目的是迭代地调整参数，使得损失函数最小化。
+- 首先随机初始化（取一个随机的参数值），然后逐步改进，每一步都尝试降低损失函数，直到收敛到一个最小值（比如：MSE就是一个凸函数，有全局最小值）
+- 梯度下降有一个重要的参数——每一步的步长
+  - 取决于超参数**学习率（learning rate）**
+    - 学习率太低：算法需要大量迭代才能收敛
+    - 学习率太高：导致算法发散，越过最小值
+
+### (1) 随机梯度下降——SGD
+
+​	每一步在训练集中随机选择一个实例，并基于这个实例来计算梯度。
+
+
+
 # 神经网络
 
 - 使用**torch.nn包**来构建神经网络
@@ -404,6 +559,62 @@ class MyNet(nn.Module):
 
 ## 5 ~~更新参数~~
 
+# 神经网络结构
+
+## 1 卷积神经网络（Convolutional Neural Network）
+
+### (1) 卷积层
+
+### (2) 线性整流层
+
+- 线性整流函数relu
+
+### (3) 池化层
+
+- 最大池化max pooling（**最常见**）
+  
+  - 最常用的池化层：池化窗口为2 x 2，步幅为2——每隔2个元素从图像中划分出2 x 2的区块，对每个区块中的4个元素取最大值
+  
+  ![https://github.com/kuangbixia/DeepLearning/blob/master/max_pooling.JPG](..\DeepLearning\max_pooling.JPG)
+- 平均池化
+
+### (4) 完全连接层 Fully Connected Layer
+
+- 线性变换函数 torch.nn.Linear()
+
+### (5) 损失函数层
+
+## 2 递归神经网络（Recurrent Neural Network）
+
+# 深度学习——即很深层的神经网络
+
+## 1 提高模型容量的方法
+
+### (1) 增加隐层数目
+
+- 神经元连接权 *w_i*  和阈值 *θ*  等参数会增多
+
+### (2) 增加隐层神经元的数目
+
+### (3) 综述
+
+​	从增加模型复杂度的角度看，**增加隐层数目**比增加隐层神经元数目更有效。
+
+​	不仅增加了拥有激活函数的神经元数目，还增加了激活函数嵌套的层数。
+
+# 神经网络相关名词
+
+## 1 epoch
+
+- 当一个完整（有限）的数据集经过神经网络一次并返回一次，即为一个epoch
+- 一般会设置多个epoch，在神经网络中传递数据集一次是不够的，需要在同一个网络中多次传递
+- 随着epoch的数量增加，网络中的参数的更新次数也增加，曲线会由欠拟合变得过拟合，很难确定设置几个epoch是最合适的
+
+## 2 batch与batch_size
+
+- batch size是指一个batch中的样本数量
+- 当数据集不能一次性通过神经网络时，需要将数据集划分为几个batch
+
 # 神经网络相关函数
 
 - 类神经网络层——torch.nn
@@ -412,15 +623,15 @@ class MyNet(nn.Module):
 ## 1 二维卷积torch.nn.Conv2d()
 
 - 卷积结果的计算：
-  - 
-    $$
+
+  - $$
     height\_3 = height\_1 - height\_2 + 1
     $$
-    
+
   - $$
     width\_3 = width\_1 - width\_2 +1
     $$
-  
+
     
 
 ```python
@@ -506,38 +717,21 @@ $$
   net.load_state_dict(torch.load(PATH))
   ```
 
-  
+## 6 torch.max(input,dim)
 
-# 神经网络结构
+### (1) 参数
 
-## 1 卷积神经网络（Convolutional Neural Network）
+- input：输入的Tensor
+- dim：max函数索引的维度（0/1）
+  - 0：每列的最大值
+  - 1：每行的最大值
 
-- 卷积层
-- 线性整流层
-  
-  - 线性整流函数relu
-- 池化层
-  - 最大池化max pooling（**最常见**）
-    
-    - 最常用的池化层：池化窗口为2 x 2，步幅为2——每隔2个元素从图像中划分出2 x 2的区块，对每个区块中的4个元素取最大值
-    
-    ![https://github.com/kuangbixia/DeepLearning/blob/master/max_pooling.JPG](..\DeepLearning\max_pooling.JPG)
-  - 平均池化
-- 完全连接层
-- 损失函数层
+### (2) 输出
 
-## 2 相关名词
+- Tensor：包含每行/列最大值的Tensor
+- LongTensor：包含每行/列最大值对应的下标的Tensor
 
-### (1) epoch
 
-- 当一个完整（有限）的数据集经过神经网络一次并返回一次，即为一个epoch
-- 一般会设置多个epoch，在神经网络中传递数据集一次是不够的，需要在同一个网络中多次传递
-- 随着epoch的数量增加，网络中的参数的更新次数也增加，曲线会由欠拟合变得过拟合，很难确定设置几个epoch是最合适的
-
-### (2) batch与batch_size
-
-- batch size是指一个batch中的样本数量
-- 当数据集不能一次性通过神经网络时，需要将数据集划分为几个batch
 
 # TensorBoard可视化
 
@@ -631,3 +825,4 @@ writer.close()
 ### (3) DataLoader
 
 - torch.utils.data.DataLoader
+
