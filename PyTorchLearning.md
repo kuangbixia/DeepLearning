@@ -587,22 +587,24 @@ class MyNet(nn.Module):
 
   - 通过零填充，（步幅为1），使得连接的两个层有**相同的高和宽**
 
-  <img src="..\DeepLearning\zero_padding.JPG" style="zoom:67%;" />
+  <img src=".\Figures\zero_padding.JPG" style="zoom:67%;" />
 
   - 使用步幅**降低维度**：使得一个大的输入层连接到一个更小的层（s_h和s_w分别表示垂直和水平方向的步幅）
 
-  <img src="..\DeepLearning\reduce_dimension.JPG" style="zoom: 67%;" />
+  <img src=".\Figures\reduce_dimension.JPG" style="zoom: 67%;" />
 
 - **过滤器/卷积内核**
   
   - 神经元的权重用接受野的大小表示
   - 对输入图像进行过滤（卷积）得到**一个特征图**
+  
 - **多个特征图叠加**
   
   - 使用**三维**来表示多个特征图
   - 在同一个特征图中，所有的神经元共享参数，具有相同的参数（weight和bias）；不同的特征图可能有不同的参数
   - 卷积层对输入图像**使用多个过滤器**，使得它可以检测到输入的多个特征
   - 即：一个位于给定卷积层 ***l*** 的特征图 ***k*** 上的 ***i*** 行 ***j*** 列的神经元，与上一层 ***l - 1*** 的接受野内的神经元相连接，**并且穿过 *l - 1* 层中所有的特征图**。PS：***l*** 层的不同特征图上的 ***i*** 行 ***j*** 列的神经元都连接到上一层 ***l - 1*** 输出中完全相同的神经元。
+  
 - **卷积层中神经元的输出**——即位于该卷积层特征图***k***上的第***i***行***j***列的神经元的输出
 
   - 累加是：对 位于上一层***l-1***中<u>每一个特征图</u>上【该层 ***l*** 中（某一个特征图***k***上）第***i***行***j***列对应的**接受野（u行v列）**】的神经元的输出 进行权重卷积运算（权重指的是：***l***层中某一特征图 ***k*** 第i行j列的神经元和对应位于上一层特征图 ***k'*** 的u行v列个神经元的输入之间的连接权重）的<u>结果累加</u>
@@ -617,7 +619,7 @@ $$
 
 
 
-<img src="..\DeepLearning\multiple_feature_maps.png" style="zoom:67%;" />
+<img src=".\Figures\multiple_feature_maps.png" style="zoom:67%;" />
 
 ### (2) 线性整流层
 
@@ -638,7 +640,7 @@ $$
     
     池化内核为2 x 2，步幅为2——每隔2个元素从图像中划分出2 x 2的区块，对每个区块中的4个元素取最大值
   
-  <img src="..\DeepLearning\max_pooling.JPG" alt="https://github.com/kuangbixia/DeepLearning/blob/master/max_pooling.JPG" style="zoom: 67%;" />
+  <img src=".\Figures\max_pooling.JPG" alt="https://github.com/kuangbixia/DeepLearning/blob/master/max_pooling.JPG" style="zoom: 67%;" />
   
   - 平均池化mean pooling
 
@@ -654,7 +656,7 @@ $$
 
 
 
-<img src="..\DeepLearning\fully_connected_layer.JPG" style="zoom:67%;" />
+<img src=".\Figures\fully_connected_layer.JPG" style="zoom:67%;" />
 
 ### (5) 损失函数层
 
@@ -681,7 +683,7 @@ $$
 
 ## 1 二维卷积torch.nn.Conv2d()
 
-<img src="..\DeepLearning\convolution.JPG" style="zoom: 67%;" />
+<img src=".\Figures\convolution.JPG" style="zoom: 67%;" />
 
 - 卷积结果的高和宽：
 
@@ -884,7 +886,7 @@ writer.close()
 
 ## 2 CNN
 
-<img src="..\DeepLearning\MNIST_predicted_result.JPG" style="zoom:67%;" />
+<img src=".\Figures\MNIST_predicted_result.JPG" style="zoom:67%;" />
 
 ## 3 训练一个分类器
 
