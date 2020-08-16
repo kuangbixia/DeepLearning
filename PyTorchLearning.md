@@ -805,6 +805,8 @@ $$
 
 # TensorBoard可视化
 
+​	pytorch版本（1.0.1）太低，不能直接使用TensorBoard，使用了[TensorBoardX](https://github.com/lanpa/tensorboardX)，用法和[api文档](https://tensorboardx.readthedocs.io/en/latest/tensorboard.html#tensorboardX.SummaryWriter.add_images )跟TensorBoard差不多
+
 ## 1 建立TensorBoard
 
 ```python
@@ -825,7 +827,7 @@ images, labels = dataiter.next()
 img_grid = torchvision.utils.make_grid(images)
 
 # 写入TensorBoard
-writer.add_images('four_fashion_mnist_images', img_grid)
+writer.add_images('four_fashion_mnist_images', img_grid) # 可以不构建网格
 ```
 
 ## 3 观察model
@@ -875,20 +877,9 @@ writer.add_pr_curve(classes[class_index],
 writer.close()
 ```
 
-# 实验
+# 应用
 
-## 1 logistic_regression
-
-- 实验中，似乎用的不是逻辑回归，而是softmax回归
-- 使用线性变换+交叉熵损失函数+SGD随机梯度下降
-- 对每个输入图像，输出的是1x10（10个类别）的Tensor，每个元素分别是输入图像预测为对应下标（类别）的概率，通过torch.max()函数获取概率最大的值对应的下标（类别），则预测该图像为这个类别
-- 将各个批次（每个批次容量为100）的预测结果predicted和labels对比，计算整个测试机经过该模型的精确度
-
-## 2 CNN
-
-<img src=".\Figures\MNIST_predicted_result.JPG" style="zoom:67%;" />
-
-## 3 训练一个分类器
+## 1 训练一个分类器
 
 ### (1) 步骤
 
