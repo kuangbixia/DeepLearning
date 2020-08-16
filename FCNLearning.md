@@ -1,6 +1,4 @@
-- 学习论文 [Fully Convolutional Networks for Semantic Segmentation 基于全卷积网络的语义分割](https://arxiv.org/abs/1411.4038 "Title")
-
- 
+# 学习论文 [Fully Convolutional Networks for Semantic Segmentation 基于全卷积网络的语义分割](https://arxiv.org/abs/1411.4038 "Title")
 
 ## 摘要
 
@@ -231,6 +229,17 @@
 - 受遮挡物的影响小（第三行）
 
 <img src=".\Figures\FCN_figure6.JPG" style="zoom:67%;" />
+
+
+
+# 学习源码
+
+## 可视化
+
+### 1 读入图像显示在tensorboard
+
+- 使用add_image()/add_images()
+- [api文档](https://tensorboardx.readthedocs.io/en/latest/tensorboard.html#tensorboardX.SummaryWriter.add_images )
 
   
 
