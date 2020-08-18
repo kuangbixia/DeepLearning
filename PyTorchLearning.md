@@ -801,6 +801,30 @@ $$
 - Tensor：包含每行/列最大值的Tensor
 - LongTensor：包含每行/列最大值对应的下标的Tensor
 
+## 7 [torch.argmax(input,dim)](https://blog.csdn.net/weixin_42494287/article/details/92797061)
+
+### (1) 参数
+
+- input：输入的Tensor
+- dim：减掉的维度
+
+### (2) 输出
+
+- LongTensor：跟max函数类似，输出压缩dim维度后的Tensor
+
+## 8 torch.histc(input, bins, min,max)
+
+### (1) 参数
+
+- input：输入的Tensor
+- bins：int，直方图箱的数量（长度，max-min+1）
+- min：int，最小范围
+- max：int，最大范围
+
+### (2) 输出
+
+- Tensor：用Tensor的形式返回直方图
+
 
 
 # TensorBoard可视化
