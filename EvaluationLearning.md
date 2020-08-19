@@ -66,16 +66,16 @@
    - 基于类进行计算，将每一类的IoU计算后，累加计算平均值 -> mean IoU均交并比
 
      - $$
-       MIoU=\frac{1}{k+1}\sum_{i=0}^k\frac{p_{ii}}{\sum_{j=0}^kp_{ij}+\sum_{j=0}^kp_{ji}-p_{ii}}
+       MIoU=\frac{1}{k+1}\sum_{i=0}^k\frac{n_{ii}}{\sum_{j=0}^kn_{ij}+\sum_{j=0}^kn_{ji}-n_{ii}}
        $$
 
      - $$
-       其中，p_{ii}表示target中类别为i的像素预测为类别i的像素的个数\\
-       \sum_{j=0}^kp_{ij}相当于target中类别为i的面积（单个类别的area\_lab），\\
-       \sum_{j=0}^kp_{ji}相当于prediction中类别为i的面积（单个类别的area\_pred），\\
-p_{ii}相当于它们相交的面积（单个类别的area\_inter）
+       其中，n_{ii}表示target中类别为i的像素预测为类别i的像素的个数\\
+       \sum_{j=0}^kn_{ij}相当于target中类别为i的面积（单个类别的area\_lab），\\
+       \sum_{j=0}^kn_{ji}相当于prediction中类别为i的面积（单个类别的area\_pred），\\
+n_{ii}相当于它们相交的面积（单个类别的area\_inter）
        $$
-    
+   
      - ```python
        def batch_intersection_union(output, target, nclass):
            """mIoU"""
@@ -110,9 +110,9 @@ p_{ii}相当于它们相交的面积（单个类别的area\_inter）
    
 2. pixcal accuracy 像素精度(PA)
    $$
-   PA=\frac{\sum_{i=0}^{k}p_{ii}}{\sum_{i=0}^k \sum_{j=0}^kp_{ij}}\\
-   其中，p_{ii}表示target中类别为i的像素预测为类别i的像素的个数（correct）\\
-   \sum_{i=0}^k\sum_{j=0}^kp_{ij}相当于target中有类别标签的像素个数（labeled）
+   PA=\frac{\sum_{i=0}^{k}n_{ii}}{\sum_{i=0}^k \sum_{j=0}^kn_{ij}}\\
+   其中，n_{ii}表示target中类别为i的像素预测为类别i的像素的个数（correct）\\
+   \sum_{j=0}^kn_{ij}相当于target中类别为i的像素个数（labeled）
    $$
    
 

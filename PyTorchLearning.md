@@ -781,7 +781,7 @@ $$
 
 - 加载：
 
-  ```
+  ```python
   net.load_state_dict(torch.load(PATH))
   ```
 
