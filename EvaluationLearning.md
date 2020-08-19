@@ -4,8 +4,6 @@
 
 ### (1) 应用
 
-​	图像分类，将不同的图像划分为不同的类别，只考虑**单标签分类**问题（即每个图像有唯一的类别）
-
 - 灰度图像手写数字识别mnist（10分类）
 - cifar10（10分类），cifar100（100分类）
 - ImageNet（2万分类）
@@ -24,6 +22,12 @@
 
    - tutorials里logistics regression和CCN都是使用accuracy评价指标（mnist）
 
+     ```python
+     print('Test Accuracy of the model on the 10000 test images: {} %'.format(100 * correct / total))
+     ```
+   
+     
+   
 2. precision 精确率
    $$
    precision = \frac{TP}{TP+FP}
@@ -66,15 +70,70 @@
        $$
 
      - $$
-       其中，p_{ii}表示TP，p_{ij}表示FN，p_{ji}表示FP的数量\\
-       \sum_{j=0}^kp_{ij}相当于target中类别为i的面积，\sum_{j=0}^kp_{ji}相当于prediction中类别为i的面积，p_{ii}相当于它们相交的面积
+       其中，p_{ii}表示target中类别为i的像素预测为类别i的像素的个数\\
+       \sum_{j=0}^kp_{ij}相当于target中类别为i的面积（单个类别的area\_lab），\\
+       \sum_{j=0}^kp_{ji}相当于prediction中类别为i的面积（单个类别的area\_pred），\\
+p_{ii}相当于它们相交的面积（单个类别的area\_inter）
        $$
-
+    
+     - ```python
+       def batch_intersection_union(output, target, nclass):
+           """mIoU"""
+           # inputs are numpy array, output 4D, target 3D
+           mini = 1
+           maxi = nclass
+           nbins = nclass
+           predict = torch.argmax(output, 1) + 1
+           target = target.float() + 1
        
-
+           predict = predict.float() * (target > 0).float()
+           intersection = predict * (predict == target).float()
+           # areas of intersection and union
+           # element 0 in intersection occur the main difference from np.bincount. set boundary to -1 is necessary.
+           area_inter = torch.histc(intersection.cpu(), bins=nbins, min=mini, max=maxi)
+           area_pred = torch.histc(predict.cpu(), bins=nbins, min=mini, max=maxi)
+           area_lab = torch.histc(target.cpu(), bins=nbins, min=mini, max=maxi)
+           area_union = area_pred + area_lab - area_inter
+           assert torch.sum(area_inter > area_union).item() == 0, "Intersection area should be smaller than Union area"
+           return area_inter.float(), area_union.float()
+       
+       # 返回了统计了每个类别的像素的个数的Tensor
+       inter, union = batch_intersection_union(pred, label, self.nclass)
+       self.total_inter += inter
+       self.total_union += union
+       
+       IoU = 1.0 * self.total_inter / (2.220446049250313e-16 + self.total_union)
+       mIoU = IoU.mean().item()
+       ```
+     
+       
+   
 2. pixcal accuracy 像素精度(PA)
    $$
-   PA=\frac{\sum_{i=0}^{k}p_{ii}}{\sum_{i=0}^k \sum_{j=0}^kp_{ij}}
+   PA=\frac{\sum_{i=0}^{k}p_{ii}}{\sum_{i=0}^k \sum_{j=0}^kp_{ij}}\\
+   其中，p_{ii}表示target中类别为i的像素预测为类别i的像素的个数（correct）\\
+   \sum_{i=0}^k\sum_{j=0}^kp_{ij}相当于target中有类别标签的像素个数（labeled）
    $$
    
+
+```python
+def batch_pix_accuracy(output, target):
+    """PixAcc"""
+    # inputs are numpy array, output 4D, target 3D
+    predict = torch.argmax(output.long(), 1) + 1
+    target = target.long() + 1
+
+    pixel_labeled = torch.sum(target > 0).item()
+    pixel_correct = torch.sum((predict == target) * (target > 0)).item()
+    assert pixel_correct <= pixel_labeled, "Correct area should be smaller than Labeled"
+    return pixel_correct, pixel_labeled
+
+# 返回像素个数
+correct, labeled = batch_pix_accuracy(pred, label)
+
+self.total_correct += correct
+self.total_label += labeled
+
+pixAcc = 1.0 * self.total_correct / (2.220446049250313e-16 + self.total_label)  # remove np.spacing(1)
+```
 
