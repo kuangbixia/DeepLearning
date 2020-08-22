@@ -464,13 +464,13 @@ $$
 - 得到概率：在给定类别k的分数下，实例X属于类别k的概率
 
 $$
-\hat{p_k}=σ(s(X))_k=\frac{e^{s_k(X)}}{\sum^K_{j=1}e^{s_j(X)}}
+\hat{p_k}(X)=σ(s(X))_k=\frac{e^{s_k(X)}}{\sum^K_{j=1}e^{s_j(X)}}
 $$
 
 ### (3) 模型预测
 
 $$
-\hat{y}=argmax_k\ \hat{p}=argmax_k\ s_k(X)=argmax_k\ (W^T_k·X)
+\hat{y}=argmax_k\ \hat{p}
 $$
 
 - argmax函数：返回使得函数最大化所对应的变量的值

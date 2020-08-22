@@ -1,5 +1,9 @@
 # [深度学习模型评估指标](https://zhuanlan.zhihu.com/p/59481933)
 
+## 0 Metric用来评估和选择模型
+
+
+
 ## 1 分类评估指标
 
 ### (1) 应用
@@ -49,6 +53,8 @@
 6. ROC
 
 7. AUC
+
+
 
 ## 2 [语义分割评估指标](https://blog.csdn.net/lingzhou33/article/details/87901365)
 
