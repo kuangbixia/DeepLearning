@@ -480,7 +480,7 @@ $$
 
 $$
 \begin{align}
-&J(W)=-\frac{1}{m}\sum^m_{i=1}\sum^K_{j=1}y_k^{(i)}log(\hat{p}_k^{(i)})\\\\
+&J(W)=-\frac{1}{m}\sum^m_{i=1}\sum^K_{k=1}y_k^{(i)}log(\hat{p}_k^{(i)})\\\\
 &其中，当第i个实例的预测类别是k时，y_k^{(i)}=1，否则为0\\
 &当只有两个类别时，K=2，这个损失函数等价于逻辑回归的log损失函数
 \end{align}
