@@ -587,11 +587,11 @@ class MyNet(nn.Module):
 
   - 通过零填充，（步幅为1），使得连接的两个层有**相同的高和宽**
 
-  <img src=".\Figures\zero_padding.JPG" style="zoom:67%;" />
+  <img src=".\Figures\CNN\zero_padding.JPG" style="zoom:67%;" />
 
   - 使用步幅**降低维度**：使得一个大的输入层连接到一个更小的层（s_h和s_w分别表示垂直和水平方向的步幅）
 
-  <img src=".\Figures\reduce_dimension.JPG" style="zoom: 67%;" />
+  <img src=".\Figures\CNN\reduce_dimension.JPG" style="zoom: 67%;" />
 
 - **过滤器/卷积内核**
   
@@ -619,7 +619,7 @@ $$
 
 
 
-<img src=".\Figures\multiple_feature_maps.png" style="zoom:67%;" />
+<img src=".\Figures\CNN\multiple_feature_maps.png" style="zoom:67%;" />
 
 ### (2) 线性整流层
 
@@ -640,7 +640,7 @@ $$
     
     池化内核为2 x 2，步幅为2——每隔2个元素从图像中划分出2 x 2的区块，对每个区块中的4个元素取最大值
   
-  <img src=".\Figures\max_pooling.JPG" alt="https://github.com/kuangbixia/DeepLearning/blob/master/max_pooling.JPG" style="zoom: 67%;" />
+  <img src=".\Figures\CNN\max_pooling.JPG" style="zoom: 67%;" />
   
   - 平均池化mean pooling
 
@@ -656,13 +656,13 @@ $$
 
 
 
-<img src=".\Figures\fully_connected_layer.JPG" style="zoom:67%;" />
+<img src=".\Figures\CNN\fully_connected_layer.JPG" style="zoom:67%;" />
 
 ### (5) 损失函数层
 
 
 
-## 2 递归神经网络（Recurrent Neural Network）
+## ~~2 递归神经网络（Recurrent Neural Network）~~
 
 # 深度学习是什么？——很深层的神经网络
 
@@ -683,7 +683,7 @@ $$
 
 ## 1 二维卷积torch.nn.Conv2d()
 
-<img src=".\Figures\convolution.JPG" style="zoom: 67%;" />
+<img src=".\Figures\CNN\convolution.JPG" style="zoom: 67%;" />
 
 - 卷积结果的高和宽：
 

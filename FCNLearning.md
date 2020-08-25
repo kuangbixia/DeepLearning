@@ -15,7 +15,7 @@
   - 在语义分割领域上超越了最先进的技术
 - 接受任意大小的输入，经过推理和学习，产生相应大小的输出
 
-<img src=".\Figures\FCN_figure1.JPG" style="zoom:67%;" />
+<img src=".\Figures\FCN\FCN_figure1.JPG" style="zoom:67%;" />
 
 #### (2) 内容
 
@@ -148,7 +148,7 @@
 
 ### 3 patchwise拼凑式（小块）训练 vs 整个图像的全卷积训练
 
-<img src=".\Figures\FCN_figure5.JPG" style="zoom:67%;" />
+<img src=".\Figures\FCN\FCN_figure5.JPG" style="zoom:67%;" />
 
 #### (1)（采样）patchwise训练（没有采用）
 
@@ -170,13 +170,13 @@
 - 丢弃每个网络的分类器层
 - 将全连接层替换为卷积层
 
-<img src=".\Figures\FCN_figure2.JPG" style="zoom:67%;" />
+<img src=".\Figures\FCN\FCN_figure2.JPG" style="zoom:67%;" />
 
 ### 2 改进预测输出的精度
 
 #### (1) 层融合——建立连接将最后的预测层与较低层，以合适的步长结合
 
-![](.\Figures\FCN_figure3.JPG)
+![](.\Figures\FCN\FCN_figure3.JPG)
 
 - 对较浅层（比如pool4，1/16）添加1x1的卷积层 -> 产生类别预测（1/16）
 - 对较深层（比如conv7，1/32）添加2x的向上采样层 -> 产生类别预测（1/16）
@@ -228,22 +228,259 @@
 - 可以分离紧密相交的物体（第二行）
 - 受遮挡物的影响小（第三行）
 
-<img src=".\Figures\FCN_figure6.JPG" style="zoom:67%;" />
+<img src=".\Figures\FCN\FCN_figure6.JPG" style="zoom:67%;" />
 
 
 
-# 学习源码
+# 细化[FCN](https://arxiv.org/abs/1411.4038)学习
 
-## 可视化
+## 1 FCN结构
 
-### 1 读入图像显示在tensorboard
+### (1) VGG16结构
 
-- 使用add_image()/add_images()
+<img src="./Figures\FCN/VGG16.jpg" style="zoom:67%;" />
 
-- [api文档](https://tensorboardx.readthedocs.io/en/latest/tensorboard.html#tensorboardX.SummaryWriter.add_images )
+- 前部分的卷积层（包含ReLU）和池化层
 
+  - 最大池化层：使用2x2的池化核，步长为2，使得图像缩小一半
+  - 卷积层：使用3x3的卷积核，步长为1，填充设为1，使得经过卷积层时输出图像和输入图像保持相同的高和宽
+    - 使用多个卷积层，小卷积核，减少参数
+    - 如下面的代码段中cfg，分别是两个输出通道为64 ->（经过最大池化层）-> 两个输出通道为128 ->（经过最大池化层）-> 三个输出通道为256 ->（经过最大池化层）-> 三个输出通道为512 ->（经过最大池化层）-> 再接着三个输出通道为512的卷积层
+
+  ```python
+  cfg = {
+      # ...
+      'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
+      # ...
+  }
   
+  def make_layers(cfg, batch_norm=False):
+      layers = []
+      in_channels = 3
+      for v in cfg:
+          if v == 'M':
+              layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+          else:
+              conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+              if batch_norm:
+                  layers += (conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True))
+              else:
+                  layers += [conv2d, nn.ReLU(inplace=True)]
+              in_channels = v
+      return nn.Sequential(*layers)
+  ```
 
- 
+- 后部分的全连接层（分类器）
+
+  - 先经过一个平均池化层，将图像输出为7x7的大小
+    - VGG16要求输出图像大小固定为224x224的RGB图像（3通道）
+    - 通过上面所述的卷积层和池化层后，在最后一个池化层输出图像刚好是7x7的大小
+  - 最后是三个全连接层
+
+  ```python
+  self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+  self.classifier = nn.Sequential(
+      nn.Linear(512 * 7 * 7, 4096),
+      nn.ReLU(True),
+      nn.Dropout(),
+      nn.Linear(4096, 4096),
+      nn.ReLU(True),
+      nn.Dropout(),
+      nn.Linear(4096, num_classes)
+  )
+  ```
+
+### (2) 从VGG16到FCN
+
+![](./Figures\FCN/FCN_figure3_notes.JPG)
+
+- 沿用了VGG16的前部分——卷积层和池化层
+
+  - 卷积层：如上图conv1-conv5
+  - 池化层：如上图pool1-pool5
+
+- 将全连接层替换为卷积层
+
+  - pool5后的卷积层（512通道 -> nclass通道，不改变图像大小）——_FCNHead()
+
+    - 第一个卷积层：卷积核为3x3，步长为1，填充设为1，不改变输入图像的宽和高，且不改变通道数量
+    - 第二个卷积层：卷积核为1x1，步长为1，无填充，不改变输入图像的宽和高，输出通道数量为类别数量
+
+    ```python
+    class _FCNHead(nn.Module):
+        def __init__(self, in_channels, channels, norm_layer=nn.BatchNorm2d, **kwargs):
+            super(_FCNHead, self).__init__()
+            inter_channels = in_channels // 512
+            self.block = nn.Sequential(
+                nn.Conv2d(in_channels, inter_channels, 3, padding=1, bias=False),
+                norm_layer(inter_channels),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.1),
+                nn.Conv2d(inter_channels, channels, 1)
+            )
+    ```
+
+  - pool4后的卷积层（512通道 -> nclass通道，不改变图像大小）——score_pool4()
+
+    - 卷积核为1x1，步长为1，无填充不改变输入图像的宽和高，输出通道数量为类别数量
+
+    ```python
+    self.score_pool4 = nn.Conv2d(512, nclass, 1)
+    ```
+
+  - pool3后的卷积层（256通道 -> nclass，不改变图像大小）——score_pool3()
+
+    - 卷积核为1x1，步长为1，无填充不改变输入图像的宽和高，输出通道数量为类别数量
+
+    ```python
+    self.score_pool3 = nn.Conv2d(256, nclass, 1)
+    ```
+
+- 层融合
+
+  - 通过反卷积（向上取样）放大图像
+
+    - 使用双线性插值
+    - 使得来自不同层的两个图像大小一致，进行融合 / 最后输出原图像大小的图像
+
+  - 从后往前逐层融合
+
+    - fcn32s
+
+      <img src="./Figures\FCN/FCN32s_train.JPG" style="zoom:67%;" />
+
+    - fcn16s
+
+      <img src="./Figures\FCN/FCN16s_train.JPG" style="zoom:67%;" />
+
+    - fcn8s
+
+      <img src=".\Figures\FCN\FCN8s_train.JPG" style="zoom:67%;" />
+
+- FCN vs VGG16
+
+  - VGG16在经过一系列的卷积层（和池化层）后，输出512通道7x7大小的图像，需要经过全连接层（分类器），产生一维（nclass大小）的输出
+    - 分类器需要考虑到输入图像的每一个像素，产生分类输出
+    - 因此，VGG16要求固定大小图像的输入，来确定到达全连接层的图像大小（像素个数），确定全连接的输入参数
+    - VGG16要求输入224x224的RGB图像，经过五个池化层后，缩小到7x7（512通道，通道数量由卷积层决定），所以分类器的输入是512x7x7（固定的值）
+  - FCN将全连接层替换为卷积层后，可以接受任意大小的图像的输入，通过反卷积可以产生相应大小的输出
+    - FCN由各个卷积层和池化层构成
+      - 卷积层通过设置3x3的卷积核，步长为1，填充为1，保证输出图像不改变大小，只关心输入输出通道（和图像大小无关）
+      - 每个池化层只对输入图像缩小一半，对任意大小的输入图像都可用
+    - 只要在反卷积时对图像依次放大到前一层输出图像的大小，最后直接放大到原图像的大小，即可输出相应大小的图像，所以不需要考虑输入图像的大小
+
+## 2 loss函数和优化
+
+### (1) loss函数——MixSoftmaxCrossEntropyLoss
+
+- 实际上采用了交叉熵损失函数F.cross_entropy()
+
+- 对output上每个像素预测的类别和target上的像素类别比较，计算loss值
+
+  - $$
+    \begin{align}
+    &loss(i)=-\sum^K_{k=1}y_k^{(i)}log(\hat{p}_k^{(i)})\\
+    &设有K个类别；\\
+    &当target上第i个像素的类别是k时，y^{(i)}_k=1，否则为0;\\
+    &\hat{p}^{(i)}_k表示第i个像素属于类别k的概率
+    \end{align}
+    $$
+
+- 整个output的loss值即为它上面所有像素的loss值的平均值
+
+  - $$
+    loss(output)=\frac{1}{m}\sum_{i=1}^mloss(i)
+    $$
+
+### (2) 优化
+
+- 采用随机梯度下降SGD
+- 实验中学习率设为0.0001
+
+
+
+## 3 量化评估指标
+
+### (1) IoU/IU 交并比(Intersection over Union)
+
+$$
+IoU=\frac{target \cap prediction}{target \cup prediction}
+$$
+
+- 基于类进行计算，将每一类的IoU计算后，累加计算平均值 -> mean IoU均交并比
+
+  - $$
+    MIoU=\frac{1}{k+1}\sum_{i=0}^k\frac{n_{ii}}{\sum_{j=0}^kn_{ij}+\sum_{j=0}^kn_{ji}-n_{ii}}
+    $$
+
+  - $$
+    其中，n_{ii}表示target中类别为i的像素预测为类别i的像素的个数\\
+    \sum_{j=0}^kn_{ij}相当于target中类别为i的面积（单个类别的area\_lab），\\
+    \sum_{j=0}^kn_{ji}相当于prediction中类别为i的面积（单个类别的area\_pred），\\
+    n_{ii}相当于它们相交的面积（单个类别的area\_inter）
+    $$
+
+  - ```python
+    def batch_intersection_union(output, target, nclass):
+        """mIoU"""
+        # inputs are numpy array, output 4D, target 3D
+        mini = 1
+        maxi = nclass
+        nbins = nclass
+        predict = torch.argmax(output, 1) + 1
+        target = target.float() + 1
+    
+        predict = predict.float() * (target > 0).float()
+        intersection = predict * (predict == target).float()
+        # areas of intersection and union
+        # element 0 in intersection occur the main difference from np.bincount. set boundary to -1 is necessary.
+        area_inter = torch.histc(intersection.cpu(), bins=nbins, min=mini, max=maxi)
+        area_pred = torch.histc(predict.cpu(), bins=nbins, min=mini, max=maxi)
+        area_lab = torch.histc(target.cpu(), bins=nbins, min=mini, max=maxi)
+        area_union = area_pred + area_lab - area_inter
+        assert torch.sum(area_inter > area_union).item() == 0, "Intersection area should be smaller than Union area"
+        return area_inter.float(), area_union.float()
+    
+    # 返回了统计了每个类别的像素的个数的Tensor
+    inter, union = batch_intersection_union(pred, label, self.nclass)
+    self.total_inter += inter
+    self.total_union += union
+    
+    IoU = 1.0 * self.total_inter / (2.220446049250313e-16 + self.total_union)
+    mIoU = IoU.mean().item()
+    ```
+
+    
+
+### (2) pixcal accuracy 像素精度(PA)
+
+$$
+PA=\frac{\sum_{i=0}^{k}n_{ii}}{\sum_{i=0}^k \sum_{j=0}^kn_{ij}}\\
+其中，n_{ii}表示target中类别为i的像素预测为类别i的像素的个数（correct）\\
+\sum_{j=0}^kn_{ij}相当于target中类别为i的像素个数（labeled）
+$$
+
+```python
+def batch_pix_accuracy(output, target):
+    """PixAcc"""
+    # inputs are numpy array, output 4D, target 3D
+    predict = torch.argmax(output.long(), 1) + 1
+    target = target.long() + 1
+
+    pixel_labeled = torch.sum(target > 0).item()
+    pixel_correct = torch.sum((predict == target) * (target > 0)).item()
+    assert pixel_correct <= pixel_labeled, "Correct area should be smaller than Labeled"
+    return pixel_correct, pixel_labeled
+
+# 返回像素个数
+correct, labeled = batch_pix_accuracy(pred, label)
+
+self.total_correct += correct
+self.total_label += labeled
+
+pixAcc = 1.0 * self.total_correct / (2.220446049250313e-16 + self.total_label)  # remove np.spacing(1)
+```
+
+
 
   
