@@ -1,5 +1,19 @@
 # 学习论文[DeepLabv2:Semantic Image Segmentation with Deep Convolutional Nets, Atrous Convolution, and Fully Connected CRFs](https://arxiv.org/pdf/1606.00915.pdf)
 
+- 作者：（2017，同DeepLabv1）
+
+  - Liang-Chieh Chen
+
+  - George Papandreou
+
+  - Iasonas Kokkinos
+
+  - Kevin Murphy
+
+  - Alan L.Yuile
+
+    
+
 ## 摘要&介绍
 
 ### 1 三个贡献
@@ -7,12 +21,12 @@
 #### (1) 空洞卷积
 
 - 控制特征图的分辨率
-- 不增加参数的前提下扩大过滤器的接受野，包含更大的上下文
+- 不增加参数的前提下**扩大过滤器的接受野**，包含更大的上下文
 
 #### (2) 空洞空间金字塔池化(ASPP:Atrous Spatial Pyramid Pooling)
 
 - 多尺度分割
-- ASPP用过滤器以多种采样率和有效的视野探测卷积特征层，捕获不同尺度的目标和图像上下文
+- ASPP用过滤器以多种采样率和有效的视野探测卷积特征层，处理不同尺度的图像
 
 #### (3) 结合DCNN和CRF来改进对象边界的定位
 
@@ -127,8 +141,76 @@
 - ASPP：
 
   - 使用并行的多个（下图有4个）空洞卷积层（不同的采样率）
-  - 提取到的特征图之后会经过不同的分支进一步处理，并融合产生最后的结果
+  - 提取到的特征图之后会经过**不同的分支**进一步处理，并融合产生最后的结果
 
   <img src=".\Figures\DeepLabv2\ASPP.JPG" style="zoom:67%;" />
 
-### 3 全连接CRF——用于恢复精确的边界
+### 3 全连接CRF——用于恢复精确的边界（同DeepLabv1）
+
+#### (1) DCNN边界定位精度低
+
+​	DCNN虽然在分类任务中是最成功的，但只能产生平滑的响应，只能预测图像中物体的粗糙位置，物体的边界模糊，不够精确
+
+- 卷积网络的平移不变性
+- 顶层神经元节点的接受野很大
+
+#### (2) 已有的两个解决方向
+
+1. 利用卷积网络中的各层信息（如FCN **层融合**），更好地估计目标的边界
+2. 采用**超像素**表示法，将定位任务交给**低级的分割方法**（无语义的分割）
+
+#### (3) 提出：将DCNN的识别能力和全连接CRF的精细定位结合
+
+- 优点：产生精确的语义分割结果，**恢复目标边界**，达到当时细节上的最高水平
+
+- 采用**能量函数**
+  $$
+  \begin{align}
+  &E(x)=\sum_i\theta_i(x_i)+\sum_{ij}\theta_{ij}(x_i,x_j)\\
+  \end{align}
+  $$
+
+  - 一元势函数——来自DCNN的输出
+    $$
+    \begin{align}
+    &\theta_i(x_i)=-log{P(x_i)}\\
+    &其中，P(x_i)是像素i被标签为x的概率（通过DCNN计算）\\\\
+    \end{align}
+    $$
+
+  - 二元势函数——描述两两像素之间的关系
+
+    - 全连接条件随机场 -> 即一个元素与图像上的其他任意像素的关系（实际上只考虑标签不同的两两像素，如下公式所示）
+      - 高斯核（？）
+
+    $$
+    \begin{align}
+    &\theta_{ij}(x_i,x_j)=\mu(x_i,x_j)\sum_{m=1}^K\omega_m\cdot k^m(f_i,f_j)\\
+    &其中，当x_i\neq x_j时，\mu(x_i,x_j)=1，否则\mu(x_i,x_j)=0;\\
+    &k^m(f_i,f_j)是高斯核，取决于f_i,f_j（为像素i和像素j提取的特征），通过\omega_m加权\\\\
+    \end{align}
+    $$
+
+    - 具体地：
+
+      - 第一个核的作用：让位置和颜色相近的像素打上相似的标签
+      - 第二个核的作用：相当于一个平滑项，在处理平滑时只考虑空间邻近性
+
+      $$
+      \begin{align}
+      &\theta_{ij}(x_i,x_j)=\mu(x_i,x_j)
+      \begin{bmatrix}
+      \omega_1 exp(-\frac{||p_i-p_j||^2}{2\sigma_\alpha^2}-\frac{||I_i-I_j||^2}{2\sigma_\beta^2})
+      +\omega_2exp(-\frac{||p_i-p_j||^2}{2\sigma_\gamma^2})
+      \end{bmatrix}\\
+      &其中，第一个核跟像素位置和像素颜色强度有关，第二个核只跟像素位置有关;\\
+      &超参数\sigma_\alpha,\sigma_\beta和\sigma_\gamma控制高斯核的尺度\\\\
+      \end{align}
+      $$
+
+- 由于 双边空间的高斯卷积 计算复杂，使用完全可分解的**平均场**来近似计算（？）
+  $$
+  b(X)=\prod_ib_i(x_i)
+  $$
+
+### 
