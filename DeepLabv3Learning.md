@@ -1,4 +1,4 @@
-# 关于各种maps
+# 关于卷积网络中的maps
 
 ## 1 feature maps 特征图
 
