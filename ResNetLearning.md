@@ -10,10 +10,13 @@
   - 直接使用stride=2的卷积做下采样
   - 用平均池化层代替了全连接层
   - 为了保持网络的复杂度，当特征图缩小一半时，通道数增大一倍
-- 如下图最右，ResNet在每两层网络之间增加**短路机制**，加入了**残差学习**
+- 如下图（ResNet34）最右，ResNet在每两层网络之间增加**短路机制**，加入了**残差学习**
 
 <img src=".\Figures\ResNet\ResNet.jpg"  />
 
+- ResNet的各种变式结构
+  - 每组卷积中的第一层卷积stride=2，图像缩小一半
 
+<img src=".\Figures\ResNet\ResNet_variants.jpg" style="zoom:67%;" />
 
 # 残差学习 Residual learning
