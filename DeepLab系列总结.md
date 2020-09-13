@@ -22,21 +22,15 @@
 
 ​	笔记见DeepLabv3+Learning.md
 
-
-
-|                    | DeepLabv1 | DeepLabv2       | DeepLabv3 | DeepLabv3+ |
-| ------------------ | --------- | --------------- | --------- | ---------- |
-| 主干网络(backbone) | VGG16     | VGG16/ResNet101 |           |            |
-| 空洞卷积           |           |                 |           |            |
-| ASPP模块           |           |                 |           |            |
-| 改进的ASPP模块     |           |                 |           |            |
-| 全连接CRF后处理    |           |                 |           |            |
-|                    |           |                 |           |            |
-|                    |           |                 |           |            |
+|                     | DeepLabv1 | DeepLabv2       | DeepLabv3                        | DeepLabv3+                      |
+| ------------------- | --------- | --------------- | -------------------------------- | ------------------------------- |
+| 主干网络(backbone)  | VGG16     | VGG16/ResNet101 | ResNet101                        | ResNet101/Xception              |
+| ASPP模块            |           | √               |                                  |                                 |
+| 改进的ASPP模块      |           |                 | √                                | √                               |
+| 全连接CRF后处理     | √         | √               |                                  |                                 |
+| Encoder-Decoder结构 |           |                 | 对输出进行简单的双线性插值上采样 | 对输出进行上采样 + 利用低层信息 |
 
 ## 3 DeepLabv1到DeepLabv3+的主干网络&结构
-
-​	以下的主干网络都是ImageNet预训练过的。
 
 ### (1) DeepLabv1:VGG16（如下图）
 
@@ -101,12 +95,16 @@
 
 <img src=".\Figures\DeepLabv3+\DeepLabv3+.png" style="zoom: 67%;" />
 
-#### ② [改进的对齐Xception（如下图，详见DeepLabv3+Learning.md）](#② 主干网络是Xception版本)
+#### ② [改进的对齐Xception（如下图）](#② 主干网络是Xception版本)
 
 <img src=".\Figures\DeepLabv3+\modified_aligned_Xception.JPG" style="zoom:67%;" />
 
-1. 将Xception的输出**连接到改进后的ASPP**（同DeepLabv3）上，作为Encoder
-2. 增加简单有效的Decoder模块
+1. 改进对齐Xception
+   - 不修改入口流网络的结构
+   - **所有的最大池化操作用深度可分卷积代替**，这样可以通过采用空洞卷积来提取任意分辨率的特征图
+   - 在每个**3x3的深度卷积**之后都增加**批量标准化（BN）**和**ReLU激活函数**
+2. 将改进后的对齐Xception的输出**连接到改进后的ASPP**（同DeepLabv3）上，作为Encoder
+3. 增加简单有效的Decoder模块
 
 ​	（实验证明，改进后的对齐Xception比ResNet101效果好。）
 
@@ -145,13 +143,68 @@
 
 ​	**深度可分卷积**由**深度卷积**和**逐点卷积**组成（如下图a和b）
 
-<img src="C:/工作/DeepLearning/Figures/DeepLabv3+/atrous_separable_convolution.JPG" style="zoom:67%;" />
+<img src="./Figures/DeepLabv3+/atrous_separable_convolution.JPG" style="zoom:67%;" />
 
 ## 2 DCNN平移不变性导致细节信息丢失，目标边界定位模糊
 
 ### (1) 引入全连接CRF后处理（DeepLabv1引入，DeepLabv3开始废弃）
 
+#### ① 作用
+
 ​	在双线性插值上采样后增加全连接CRF后处理，给位置和颜色强度相近的像素打上相似的标签，让边界更清晰
+
+#### ② 实现
+
+​	<u>**（代码部分后续看懂后再做整理）**</u>
+
+- 采用**能量函数**
+  $$
+  \begin{align}
+  &E(x)=\sum_i\theta_i(x_i)+\sum_{ij}\theta_{ij}(x_i,x_j)\\
+  \end{align}
+  $$
+
+  - 一元势函数——来自DCNN的输出
+    $$
+    \begin{align}
+    &\theta_i(x_i)=-log{P(x_i)}\\
+    &其中，P(x_i)是像素i被标签为x的概率（通过DCNN计算）\\\\
+    \end{align}
+    $$
+
+  - 二元势函数——描述两两像素之间的关系
+
+    - 全连接条件随机场 -> 即一个元素与图像上的其他任意像素的关系（实际上只考虑标签不同的两两像素，如下公式所示）
+
+    $$
+    \begin{align}
+    &\theta_{ij}(x_i,x_j)=\mu(x_i,x_j)\sum_{m=1}^K\omega_m\cdot k^m(f_i,f_j)\\
+    &其中，当x_i\neq x_j时，\mu(x_i,x_j)=1，否则\mu(x_i,x_j)=0;\\
+    &k^m(f_i,f_j)是高斯核，取决于f_i,f_j（为像素i和像素j提取的特征），通过\omega_m加权\\\\
+    \end{align}
+    $$
+
+    - 具体地：
+
+      - 第一个核的作用：让位置和颜色相近的像素打上相似的标签
+      - 第二个核的作用：相当于一个平滑项，在处理平滑时只考虑空间邻近性
+
+      $$
+      \begin{align}
+      &\theta_{ij}(x_i,x_j)=\mu(x_i,x_j)
+      \begin{bmatrix}
+      \omega_1 exp(-\frac{||p_i-p_j||^2}{2\sigma_\alpha^2}-\frac{||I_i-I_j||^2}{2\sigma_\beta^2})
+      +\omega_2exp(-\frac{||p_i-p_j||^2}{2\sigma_\gamma^2})
+      \end{bmatrix}\\
+      &其中，第一个核跟像素位置和像素颜色强度有关，第二个核只跟像素位置有关;\\
+      &超参数\sigma_\alpha,\sigma_\beta和\sigma_\gamma控制高斯核的尺度\\\\
+      \end{align}
+      $$
+
+#### ③ 为什么废弃
+
+- DeepLabv3改进了ASPP，增加了Image Pool，使用了图像级别的特征来增强，目的是解决采样率rate过大导致过滤器退化
+- 但同时也增强了全局上下文信息的捕获，一定程度上解决了细节信息丢失的问题（ -> **对应问题2**），且DeepLabv3中实验表明不加入DenseCRF后处理比加入性能更高
 
 ![](.\Figures\DeepLabv1\FC_CRF.JPG)
 
