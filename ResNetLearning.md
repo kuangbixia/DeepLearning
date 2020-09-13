@@ -1,0 +1,22 @@
+# LResNet分类网络
+
+- 当深度学习越深，表达能力越强。
+- 当CNN分类网络从AlexNet（7层）发展到VGG16、VGG19，到后来的GoogleNet（22层），发现CNN网络达到一定深度之后再增加层数并不能提高分类性能，反而使得网络更慢地收敛，分类的准确率也下降。
+- 作者提出用**残差学习**来解决退化问题
+
+## 1 ResNet结构
+
+- ResNet参考了VGG19，主要的变化是：
+  - 直接使用stride=2的卷积做下采样
+  - 用平均池化层代替了全连接层
+  - 为了保持网络的复杂度，当特征图缩小一半时，通道数增大一倍
+- 如下图（ResNet34）最右，ResNet在每两层网络之间增加**短路机制**，加入了**残差学习**
+
+<img src=".\Figures\ResNet\ResNet.jpg"  />
+
+- ResNet的各种变式结构
+  - 每组卷积中的第一层卷积stride=2，图像缩小一半
+
+<img src=".\Figures\ResNet\ResNet_variants.jpg" style="zoom:67%;" />
+
+# 残差学习 Residual learning
