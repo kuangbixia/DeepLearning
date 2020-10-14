@@ -22,6 +22,60 @@
 
 
 
+# 关于R-CNN,Fast R-CNN,Faster R-CNN和Mask R-CNN
+
+## 1 R-CNN
+
+### (1) 提出用CNN来进行目标检测
+
+1. 输入图像
+2. 采用selective search生成区域建议（2000个）
+3. 对每一个区域建议，将区域内的图像数据转换成与CNN兼容的格式，统一变换尺寸为227x227，输入到大型CNN中，提取固定长度的特征向量
+4. 使用线性SVM对每一个区域进行分类
+
+<img src="E:/DeepLearning/Figures/R-CNN/R-CNN_overview.jpg" style="zoom:67%;" />
+
+### (2) 缺点
+
+- selective search十分耗时
+- 串联式CNN要对每一个区域进行特征提取，耗时长
+- 2-4三个模块分别训练，空间消耗大
+
+## 2 Fast R-CNN
+
+### (1) 在R-CNN的基础上做改进
+
+1. 使用CNN对**全图**进行特征提取后，增加一个**RoI Pooling Layer**在**全图特征**上获取每个RoI对应的特征
+2. 之后通过全连接层进行分类和包围盒的修正
+
+<img src="E:/DeepLearning/Figures/R-CNN/Fast R-CNN.JPG" style="zoom:67%;" />
+
+### (2) 缺点
+
+​	前期耗时的selective search依然存在
+
+## 3 Faster R-CNN
+
+​	对Fast R-CNN的改进：用**Region Proposal Network(RPN)**取代selective search生成区域建议
+
+<img src="E:/DeepLearning/Figures/R-CNN/Faster R-CNN.JPG" style="zoom:67%;" />
+
+## 4 Mask R-CNN
+
+<img src="E:/DeepLearning/Figures/R-CNN/Mask R-CNN.JPG" style="zoom:67%;" />
+
+### (1) 在Faster R-CNN的基础上改进
+
+​	在Faster R-CNN的基础上**增加了一个Mask Prediction Branch分支**，改进了RoI Pooling，提出**RoI Align**
+
+### (2) 主要结构
+
+1. 共享的卷积层
+2. 生成区域建议的网络RPN
+3. 对区域进行分类的网络
+
+
+
 # R-CNN(Regions with CNN features)：区域卷积神经网络
 
 - 论文 [Rich feature hierarchies for accurate object detection and semantic segmentation](https://arxiv.org/abs/1311.2524) 提出将**区域建议**和**CNN**结合，构建新的网络，叫R-CNN
@@ -242,8 +296,6 @@
 
 
 
-
-
 # Fast R-CNN
 
 - 论文 [Fast R-CNN](https://arxiv.org/abs/1504.08083)
@@ -255,3 +307,4 @@
 # Mask R-CNN
 
 - 论文 [Mask R-CNN](https://arxiv.org/abs/1703.06870)
+
