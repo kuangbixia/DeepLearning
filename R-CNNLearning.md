@@ -33,7 +33,7 @@
 3. 对每一个区域建议，将区域内的图像数据转换成与CNN兼容的格式，统一变换尺寸为227x227，输入到大型CNN中，提取固定长度的特征向量
 4. 使用线性SVM对每一个区域进行分类
 
-<img src="E:/DeepLearning/Figures/R-CNN/R-CNN_overview.jpg" style="zoom:67%;" />
+<img src="./Figures/R-CNN/R-CNN_overview.jpg" style="zoom:67%;" />
 
 ### (2) 缺点
 
@@ -48,7 +48,7 @@
 1. 使用CNN对**全图**进行特征提取后，增加一个**RoI Pooling Layer**在**全图特征**上获取每个RoI对应的特征
 2. 之后通过全连接层进行分类和包围盒的修正
 
-<img src="E:/DeepLearning/Figures/R-CNN/Fast R-CNN.JPG" style="zoom:67%;" />
+<img src="./Figures/R-CNN/Fast R-CNN.JPG" style="zoom:67%;" />
 
 ### (2) 缺点
 
@@ -58,11 +58,11 @@
 
 ​	对Fast R-CNN的改进：用**Region Proposal Network(RPN)**取代selective search生成区域建议
 
-<img src="E:/DeepLearning/Figures/R-CNN/Faster R-CNN.JPG" style="zoom:67%;" />
+<img src="./Figures/R-CNN/Faster R-CNN.JPG" style="zoom:67%;" />
 
 ## 4 Mask R-CNN
 
-<img src="E:/DeepLearning/Figures/R-CNN/Mask R-CNN.JPG" style="zoom:67%;" />
+<img src="./Figures/R-CNN/Mask R-CNN.JPG" style="zoom:67%;" />
 
 ### (1) 在Faster R-CNN的基础上改进
 

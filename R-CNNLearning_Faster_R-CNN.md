@@ -37,7 +37,7 @@
 
 ### (1) Region Proposal Network（RPN）
 
-<img src="E:/DeepLearning/Figures/R-CNN/Faster R-CNN.JPG" style="zoom:67%;" />
+<img src="./Figures/R-CNN/Faster R-CNN.JPG" style="zoom:67%;" />
 
 - RPN输入任意大小的图像，输出一组矩形的区域建议（含有目标分数）
 - 在最后一个共享卷积层输出的特征图上，滑动一个小网络来生成区域建议
@@ -46,7 +46,7 @@
 
 #### ① anchors
 
-<img src="E:/DeepLearning/Figures/R-CNN/RPN.JPG" style="zoom:67%;" />
+<img src="./Figures/R-CNN/RPN.JPG" style="zoom:67%;" />
 
 - 在每一个滑动窗口的位置，同时预测多个区域建议，每个位置上最大可能的区域建议数量记为k（k个包围盒），则
   - reg包围盒回归产生4k个编码的**坐标**
@@ -64,7 +64,7 @@
 
 ​	提出了一个解决多尺度问题的新机制：使用多尺度的参考框（如下图c）
 
-<img src="E:/DeepLearning/Figures/Faster R-CNN/multiple_scale.JPG" style="zoom:67%;" />
+<img src="./Figures/Faster R-CNN/multiple_scale.JPG" style="zoom:67%;" />
 
 - 在**anchor金字塔**上建立的，更有成本效益
 - 用不同尺度/不同纵横比的anchor框，来对包围盒进行分类和回归
